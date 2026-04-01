@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Salon Booking System</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f4f6f9;
+  margin: 0;
+}
+
+.container {
+  max-width: 900px;
+  margin: auto;
+  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+  color: #333;
+}
+
+.card {
+  background: white;
+  padding: 20px;
+  margin-top: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+label {
+  display: block;
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+input, select {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+}
+
+.slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.slot {
+  padding: 10px;
+  border-radius: 6px;
+  background: #e0e0e0;
+  cursor: pointer;
+}
+
+.slot.selected {
+  background: #4caf50;
+  color: white;
+}
+
+button {
+  margin-top: 15px;
+  padding: 12px;
+  width: 100%;
+  background: #25D366;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.summary {
+  background: #fafafa;
+  padding: 10px;
+  border-radius: 6px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <h1>Salon Booking System</h1>
+
+  <div class="card">
+    <label>Name</label>
+    <input type="text" id="name">
+
+    <label>Phone</label>
+    <input type="text" id="phone">
+
+    <label>Service</label>
+    <select id="service">
+      <option value="Haircut" data-time="30">Haircut (30 min)</option>
+      <option value="Haircut + Beard" data-time="45">Haircut + Beard (45 min)</option>
+      <option value="Groom Package" data-time="90">Groom Package (90 min)</option>
+    </select>
+
+    <label>Select Date</label>
+    <input type="date" id="date">
+
+    <label>Select Time Slot</label>
+    <div class="slots" id="slots"></div>
+
+    <div class="summary" id="summary"></div>
+
+    <button onclick="bookNow()">Book via WhatsApp</button>
+  </div>
+</div>
+
+<script>
+const OWNER_WHATSAPP = "91XXXXXXXXXX";
+const TOTAL_SEATS = 3;
+
+let bookings = {}; // store bookings by date/time
+
+function generateSlots() {
+  const slotsContainer = document.getElementById("slots");
+  slotsContainer.innerHTML = "";
+
+  let start = 9;
+  let end = 21;
+
+  for (let h = start; h < end; h++) {
+    let time = (h < 10 ? "0" + h : h) + ":00";
+
+    let div = document.createElement("div");
+    div.className = "slot";
+    div.innerText = time;
+
+    div.onclick = () => selectSlot(div, time);
+
+    slotsContainer.appendChild(div);
+  }
+}
+
+let selectedTime = "";
+
+function selectSlot(element, time) {
+  document.querySelectorAll(".slot").forEach(s => s.classList.remove("selected"));
+  element.classList.add("selected");
+  selectedTime = time;
+  updateSummary();
+}
+
+function updateSummary() {
+  const name = document.getElementById("name").value;
+  const service = document.getElementById("service").value;
+  const date = document.getElementById("date").value;
+
+  document.getElementById("summary").innerHTML =
+    `<b>Summary:</b><br>
+     Name: ${name}<br>
+     Service: ${service}<br>
+     Date: ${date}<br>
+     Time: ${selectedTime}`;
+}
+
+document.getElementById("service").addEventListener("change", generateSlots);
+document.getElementById("date").addEventListener("change", generateSlots);
+
+function bookNow() {
+  const name = document.getElementById("name").value;
+  const phone = document.getElementById("phone").value;
+  const service = document.getElementById("service");
+  const serviceName = service.value;
+  const duration = service.options[service.selectedIndex].dataset.time;
+  const date = document.getElementById("date").value;
+
+  if (!name || !phone || !selectedTime || !date) {
+    alert("Please fill all fields");
+    return;
+  }
+
+  const key = date + "_" + selectedTime;
+
+  if (!bookings[key]) bookings[key] = 0;
+
+  if (bookings[key] >= TOTAL_SEATS) {
+    alert("No seats available for this slot");
+    return;
+  }
+
+  bookings[key]++;
+
+  const message =
+`Salon Booking Confirmation:
+Name: ${name}
+Phone: ${phone}
+Service: ${serviceName}
+Duration: ${duration} mins
+Date: ${date}
+Time: ${selectedTime}`;
+
+  const urlOwner = `https://wa.me/${OWNER_WHATSAPP}?text=${encodeURIComponent(message)}`;
+  const urlCustomer = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
+
+  window.open(urlOwner, "_blank");
+  window.open(urlCustomer, "_blank");
+}
+
+generateSlots();
+</script>
+
+</body>
+</html>
